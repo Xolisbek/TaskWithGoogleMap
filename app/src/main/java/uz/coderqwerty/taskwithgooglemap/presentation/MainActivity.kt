@@ -9,39 +9,49 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.lifecycleScope
+import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.transitions.SlideTransition
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import uz.coderqwerty.taskwithgooglemap.assembly.navigation.NavigationHandler
+import uz.coderqwerty.taskwithgooglemap.presentation.ui.screens.main.MainScreen
 import uz.coderqwerty.taskwithgooglemap.presentation.ui.theme.TaskWithGoogleMapTheme
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var navigationHandler: NavigationHandler
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TaskWithGoogleMapTheme {
-                Scaffold(modifier = Modifier.Companion.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.Companion.padding(innerPadding)
-                    )
+                //Navigation controller
+                Navigator(
+                    screen = MainScreen(),
+                    onBackPressed = { true }
+                )
+                { navigator ->
+
+                    LaunchedEffect(key1 = navigator) {
+                        navigationHandler.screenState
+                            .onEach {
+                                it.invoke(navigator)
+                            }
+                            .launchIn(lifecycleScope)
+                    }
+
+                    SlideTransition(navigator = navigator)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier.Companion) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TaskWithGoogleMapTheme {
-        Greeting("Android")
     }
 }
